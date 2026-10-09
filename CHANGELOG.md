@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 — 2026-10-09
+
+- Integrate NoUnityCN as a third-party discovery layer with upstream-published alternate sites, official Releases API cross-checking, Hub deep links, direct installers and verified offline transfer.
+- Document conditional GitHub Hub-asset fallback without treating mirror checksums, code licensing, HTTP success or a website label as official product/installation/license verification.
+- Give the supplied blog and Zhihu article explicit historical/possibly outdated status below existing verified practice; record unreadable Zhihu content as unknown rather than reconstructing it.
+- Keep existing installation/routing/cleanup helpers unchanged; add workflow-link and reference-precedence regression tests. No workstation installation or network/security change is implied by this knowledge update.
+
 ## 0.1.0 — 2026-10-09
 
 - Supersede `ld-unitysetup-v1` with the fixed online skill name and a complete Agent installation guide.

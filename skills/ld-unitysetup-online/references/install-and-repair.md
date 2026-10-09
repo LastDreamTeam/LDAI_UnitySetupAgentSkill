@@ -10,12 +10,14 @@ Do not change system hosts, DNS, certificates, firewall, security/privacy, local
 
 1. Read a supplied project's ProjectVersion.txt; require that exact full version and revision. Without a project, choose a human-requested version or consult current official supported-release guidance.
 2. Probe the archive, download entry and candidate installer independently using probe_routes.py. Stop installation if any chain enters China/Tuanjie domains or TLS validation is incomplete.
-3. Obtain Hub/Editor only from current official primary sources. Do not treat a starting .com URL or filename as proof.
+3. Prefer current official primary sources for Hub/Editor. If discovery or delivery fails, use the bounded routes in [download fallbacks](download-fallbacks.md); a community index is not a publisher, and a third-party mirrored asset is not executable until its independent official provenance and the same product/signature/version gates are satisfied. Do not treat a starting .com URL or filename as proof.
 4. Verify the downloaded product, valid Unity Technologies signature and full version with Test-LDUnityInstaller.ps1 on Windows; use the native platform equivalent elsewhere.
 5. Run the verified installer within existing authorization and preserve ordinary OS consent. Install Editor first, verify it, then add only necessary build modules for the exact version.
 6. Verify installed identity, active Hub release/feed and licensing/UPM endpoints, and the actual project/module readiness. Do not launch or save a target international project with a cN/tN or Tuanjie Editor.
 
 Use installed CLI help plus current official Unity docs before command-line installation. Do not invent headless flags or assume an embedded Hub CLI remains supported. Existing Unity 2022 projects do not become Unity 6 projects merely to satisfy a new tool integration.
+
+NoUnityCN and supplied historical articles supplement this workflow; they do not override its verified practice. Read [community reference notes](community-reference-notes.md) before borrowing old proxy scripts, browser claims or version-selection advice. A reported past success is not current installation evidence.
 
 ## IDE and collaboration tools
 

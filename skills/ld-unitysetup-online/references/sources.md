@@ -23,11 +23,11 @@ Use current primary documentation before changing installation commands, workloa
 
 ## Supplementary community reading
 
-These sources can suggest symptoms or experiments but are not installer trust roots and must not override live evidence or primary documentation:
+These sources can suggest symptoms or experiments but are not installer trust roots. Existing verified skill practice takes priority over supplementary articles; check current primary evidence and explicitly revalidate any conflict rather than silently adopting a new source. The provider reports a past success once, not current success of every article or step. Detailed status and adopted/rejected claims are in [historical auxiliary reference notes](community-reference-notes.md):
 
-- https://zhuanlan.zhihu.com/p/1914827912286307473 — supplied by the user; automated retrieval may be blocked by the site.
+- https://zhuanlan.zhihu.com/p/1914827912286307473 — supplied historical reference; on 2026-10-09 the page and public article endpoint returned 403, so its body/title/instructions were not verified. Do not attribute another article's steps to this URL.
 - https://www.cnblogs.com/mthoutai/p/19614230 — describes proxy environment variables and region redirects. Its advice to avoid all `f1` releases is overbroad; check the complete suffix, feed, and signature instead.
-- https://www.nounitycn.top/ — community index that states it is not an official Unity service. Use only to discover candidate versions, then resolve and verify official Unity artifacts.
+- https://www.nounitycn.top/ and https://github.com/DanKE123abc/NoUnityCN — third-party index/source, not an official Unity service. See [download fallback routes](download-fallbacks.md) for upstream-published alternate sites, official API comparison, Hub URI versus installer delivery, reviewed Hub mirror candidates and offline transfer. Preserve service/region conditions and separate source-code licensing from Unity artifacts/licensing.
 
 ## Maintenance rule
 

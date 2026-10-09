@@ -2,7 +2,7 @@
 name: ld-unitysetup-online
 description: Install and verify international Unity workstations, remove Tuanjie or Unity China products with authorization, and repair Unity website/CDN region redirects through scoped existing proxy routes. Use for Unity Hub/Editor setup, cN/tN builds, installer provenance, China-state cleanup, or exact-version workstation readiness; not Unity project code changes.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # LD Unity Setup Online
@@ -20,6 +20,8 @@ Replace `ld-unitysetup-v1`; use only this skill for the same task. Keep Unity In
 - **Audit / installer trust:** read [international integrity](references/international-integrity.md). Windows: `powershell -NoProfile -File scripts/Test-LDUnitySetup.ps1 -SkipNetwork -OutputFormat Json`, then run the route probe below. Verify a candidate with `scripts/Test-LDUnityInstaller.ps1 -Path <file> -Kind Hub|Editor|Module` before running it.
 - **Install / reproduce a workstation:** read [installation and removal](references/install-and-repair.md) and [production baseline](references/production-baseline.md). Consult current primary docs in [sources](references/sources.md). Use the exact international Editor and required modules, not an automatic patch upgrade. Do not open the project in an unverified Editor.
 - **Website / Hub / CDN redirects:** read [scoped route repair](references/proxy-routing.md). Run `python -B scripts/probe_routes.py --json` with the current effective route; supply `--proxy <existing proxy URL>` when needed. Probe the archive, download entry and installer independently. Never infer Unity's region decision from another site's IP geolocation.
+- **Download fallback / NoUnityCN:** read [download routes](references/download-fallbacks.md). Separate official metadata, third-party discovery, Hub deep links, direct installers, reviewed GitHub Hub assets and verified offline transfer. Lock the exact version/revision and keep the existing integrity gates; multiple frontends may share the same failed upstream.
+- **Supplied blog / Zhihu articles:** read [historical auxiliary references](references/community-reference-notes.md). Existing verified practice takes priority. A provider's past success is not a current reproduction; inaccessible or outdated advice must not become a default installation rule.
 - **Remove Tuanjie / China state:** read [installation and removal](references/install-and-repair.md) and [cleanup lessons](references/cleanup-lessons.md). Start with `scripts/Get-LDUnityChinaInventory.ps1`; invoke only a verified, registered product-specific uninstaller. Preview `scripts/Move-LDUnityChinaUserState.ps1 -TuanjieUserData -UnityHubChinaCache`, then apply within the already-authorized targets after applications are closed. Handle specific protocol residue as documented; do not use a broad registry cleaner.
 - **macOS / Linux:** read [platforms](references/platforms.md). Use native official validation and removal. Windows helper coverage does not prove another OS is clean.
 - **Skill installation / update / old-version migration:** read [maintenance](references/maintenance.md) and the repository's [Agent installation guide](https://github.com/LastDreamTeam/LDAI_UnitySetupAgentSkill/blob/main/skills/install.md).
