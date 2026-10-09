@@ -1,0 +1,16 @@
+LDAI_UnitySetupAgentSkill uses separate licenses by file type.
+
+Markdown instructions, references and other prose documentation:
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+Full text: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+Bundled copy: skills/ld-unitysetup-online/references/CC-BY-SA-4.0.txt
+
+Executable scripts and tests (.py, .ps1, .sh, and workflow code):
+GNU Affero General Public License version 3 only (AGPL-3.0-only).
+Full text: https://www.gnu.org/licenses/agpl-3.0.txt
+Bundled copy: skills/ld-unitysetup-online/references/AGPL-3.0-only.txt
+
+Other original metadata is provided under CC BY-SA 4.0 unless a file states otherwise.
+These are separate grants, not a choice of either license for the same material.
+
+Copyright 2026 the respective contributors. Preserve original authorship and notices.

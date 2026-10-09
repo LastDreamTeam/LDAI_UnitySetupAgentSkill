@@ -1,0 +1,6 @@
+interface:
+  display_name: "LD Unity Setup Online"
+  short_description: "Verify international Unity and remove Tuanjie safely"
+  default_prompt: "Use $ld-unitysetup-online to verify my international Unity setup and address the requested installation or cleanup."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.ld-unitysetup-data/
+.pytest_cache/
+*.log
+*.local.json
