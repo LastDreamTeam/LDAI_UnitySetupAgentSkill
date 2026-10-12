@@ -1,8 +1,8 @@
 # LDAI_UnitySetupAgentSkill
 
-**`ld-unitysetup-online`：安装、验证国际版 Unity，清理 Unity 中国版 / 团结，并诊断地区重定向的持续维护技能。**
+**`ld-unitysetup-online`：安装和维护国际版 Unity，清理中国版 / 团结，排查地区重定向问题。**
 
-由 LastDream / LD 提出需求，OpenAI Codex 整理实现。新版吸收 `ld-unitysetup-v1` 与真实工作站修复经验，固定技能名，以语义版本升级，不再叠加执行旧版。
+由 `ld-unitysetup-v1` 改造而来。
 
 ## 一句话交给任意支持技能的 Agent
 

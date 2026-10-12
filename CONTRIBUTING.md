@@ -6,4 +6,4 @@ Keep audit, authorized repair and installation separate. Changes to system netwo
 
 Run `python -m unittest discover -s tests -v` and the current host skill validator. State which operating systems and Agent integrations were actually exercised. Update the version manifest and changelog when publishing a release.
 
-Agent-authored commits should identify the actual model and summarize the problem, fix and tests. Preserve inherited human contributions without claiming they were authored by the Agent.
+Commit messages should summarize the concrete problem, change and validation. Follow the documentation wording note in `AGENTS.md`; omit AI vendor/model credits and first-person execution narratives. Preserve inherited human and upstream contributions.
