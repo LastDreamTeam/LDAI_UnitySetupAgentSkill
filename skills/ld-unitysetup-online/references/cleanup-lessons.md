@@ -26,6 +26,8 @@ On Windows, PowerShell's registry provider can return an access error even when 
 
 Move-LDUnityChinaUserState.ps1 excludes international token files, project lists, browser profiles and Program Files. It previews exact targets and defaults to a manifest-backed quarantine. References in the manifest are recovery metadata; they do not imply files were permanently deleted.
 
+Quarantine also checks the source and destination ancestors up to their AppData boundary. A junction or other reparse point requires a separate resolved-path review; a matching path prefix alone does not prove containment. Do not remove the link or move its target just to bypass this guard.
+
 Report separately:
 
 1. Installed products/processes/protocols removed.

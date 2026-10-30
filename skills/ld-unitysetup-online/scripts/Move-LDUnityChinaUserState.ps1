@@ -8,6 +8,34 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Assert-NoLinkedAncestor {
+    <#
+    .SYNOPSIS
+    Reject paths redirected outside the reviewed boundary by an ancestor link.
+    .DESCRIPTION
+    Checks the boundary and every existing path component up to the target.
+    Missing destination components are allowed; links require separate review.
+    #>
+    param([string]$Path, [string]$BoundaryRoot)
+    $full = [IO.Path]::GetFullPath($Path).TrimEnd([char]92)
+    $boundary = [IO.Path]::GetFullPath($BoundaryRoot).TrimEnd([char]92)
+    if ($full -ne $boundary -and -not $full.StartsWith($boundary + [char]92, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Path is outside the reviewed user-state boundary.'
+    }
+    # A lexical prefix does not establish containment when a parent is a junction.
+    $current = $full
+    while ($true) {
+        if (Test-Path -LiteralPath $current) {
+            $item = Get-Item -LiteralPath $current -Force
+            if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Reparse point requires separate review: $current"
+            }
+        }
+        if ($current -eq $boundary) { break }
+        $current = Split-Path -Parent $current
+    }
+}
+
 if (-not $UnityHubChinaCache -and -not $TuanjieUserData) {
     throw 'Select at least one scope: -UnityHubChinaCache or -TuanjieUserData.'
 }
@@ -67,7 +95,11 @@ foreach ($target in $targets) {
     $full = [IO.Path]::GetFullPath($target.Source)
     $allowed = $false
     foreach ($root in $allowedRoots) {
-        if ($full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) { $allowed = $true; break }
+        if ($full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
+            Assert-NoLinkedAncestor -Path $full -BoundaryRoot $root
+            $allowed = $true
+            break
+        }
     }
     if (-not $allowed) { throw "Refusing out-of-scope target: $full" }
     $pending = New-Object System.Collections.Generic.Stack[string]
@@ -107,6 +139,8 @@ $quarantineComparable = $quarantineFull.TrimEnd([char]92) + [char]92
 if (-not $quarantineComparable.StartsWith($safeQuarantineBase, [StringComparison]::OrdinalIgnoreCase)) {
     throw "QuarantineRoot must remain under $safeQuarantineBase"
 }
+# Validate the destination parents before creating directories or moving any data.
+Assert-NoLinkedAncestor -Path $quarantineFull -BoundaryRoot $local
 if (Test-Path -LiteralPath $quarantineFull) {
     throw "Quarantine destination already exists: $quarantineFull"
 }

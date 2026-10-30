@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 import sys
 import urllib.request
@@ -127,7 +128,30 @@ class Maintainer:
         return {'status': 'update_available' if version(remote['version']) > version(self.manifest['version']) else 'up_to_date',
                 'installed': self.manifest['version'], 'latest': remote['version']}
 
+    def snapshot_files(self):
+        """Yield regular skill files without traversing linked directories.
+
+        Refuse directory links before opening a snapshot. File symlinks remain
+        excluded, as before; the installed skill root is already resolved.
+        """
+        for directory, folders, files in os.walk(self.skill, followlinks=False):
+            for name in folders:
+                child = Path(directory) / name
+                # Windows junctions are not is_symlink(), but can lead back to state.
+                attributes = getattr(child.lstat(), 'st_file_attributes', 0)
+                if child.is_symlink() or attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+                    raise RuntimeError('Linked directory inside the skill requires review before updating')
+            for name in files:
+                file = Path(directory) / name
+                if file.is_file() and not file.is_symlink():
+                    yield file
+
     def sync(self, idle=False, approve=False, force=False):
+        """Apply an approved idle update to the same clean main checkout, or stop.
+
+        Return the check/defer result when no update is applicable. Preserve local
+        content and preferences on failed preconditions; never reset the checkout.
+        """
         checked = self.check(force)
         latest = checked.get('latest')
         if not latest or version(latest) <= version(self.manifest['version']):
@@ -138,27 +162,43 @@ class Maintainer:
             return {**checked, 'status': 'deferred_until_idle'}
         if self.backend() != 'git':
             return {**checked, 'status': 'use_host_update_manager'}
+        # A snapshot must never contain its own growing archive or mutable state.
+        if self.data.resolve().is_relative_to(self.skill):
+            raise RuntimeError('State directory must be outside the skill before updating')
         if self.git('branch', '--show-current').stdout.strip() != 'main':
             raise RuntimeError('Pinned or non-main branch preserved')
+        original_head = self.git('rev-parse', 'HEAD').stdout.strip()
         if self.git('status', '--porcelain', '--untracked-files=all').stdout.strip():
             raise RuntimeError('Local modifications preserved; update stopped')
         self.git('fetch', '--no-tags', 'origin', 'main')
-        fetched = json.loads(self.git('show', f'origin/main:skills/{NAME}/assets/version.json').stdout)
+        # Pin the fetched commit so another fetch cannot change the merge target.
+        fetched_head = self.git('rev-parse', '--verify', 'FETCH_HEAD^{commit}').stdout.strip()
+        fetched = json.loads(self.git('show', f'{fetched_head}:skills/{NAME}/assets/version.json').stdout)
         if fetched.get('name') != NAME or fetched.get('repository') != REPOSITORY or fetched.get('version') != latest:
             raise RuntimeError('Upstream changed after the check; check again before updating')
-        if self.git('merge-base', '--is-ancestor', 'HEAD', 'origin/main', check=False).returncode:
+        if self.git('merge-base', '--is-ancestor', original_head, fetched_head, check=False).returncode:
             raise RuntimeError('History is not fast-forward; update stopped')
+        if (self.git('branch', '--show-current').stdout.strip() != 'main'
+                or self.git('rev-parse', 'HEAD').stdout.strip() != original_head):
+            raise RuntimeError('Branch or HEAD changed during update; checkout preserved')
         if self.git('status', '--porcelain', '--untracked-files=all').stdout.strip():
             raise RuntimeError('Worktree changed during fetch; update stopped')
+        # Validate the complete traversal before opening an archive that could be linked back.
+        files = list(self.snapshot_files())
         snapshots = self.data / 'backups'
         snapshots.mkdir(exist_ok=True)
         stamp = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
         snapshot = snapshots / ('skill-' + stamp + '.zip')
         with zipfile.ZipFile(snapshot, 'w', zipfile.ZIP_DEFLATED) as archive:
-            for file in self.skill.rglob('*'):
-                if file.is_file() and not file.is_symlink():
-                    archive.write(file, file.relative_to(self.skill))
-        self.git('merge', '--ff-only', '--no-overwrite-ignore', 'origin/main')
+            for file in files:
+                archive.write(file, file.relative_to(self.skill))
+        # Snapshotting takes time: recheck the checkout immediately before mutation.
+        if (self.git('branch', '--show-current').stdout.strip() != 'main'
+                or self.git('rev-parse', 'HEAD').stdout.strip() != original_head):
+            raise RuntimeError('Branch or HEAD changed during update; checkout preserved')
+        if self.git('status', '--porcelain', '--untracked-files=all').stdout.strip():
+            raise RuntimeError('Worktree changed during snapshot; update stopped')
+        self.git('merge', '--ff-only', '--no-overwrite-ignore', fetched_head)
         self.manifest = read_json(self.skill / 'assets/version.json')
         if self.manifest['version'] != latest:
             raise RuntimeError('Post-update manifest mismatch; inspect the retained snapshot')
@@ -166,6 +206,7 @@ class Maintainer:
 
 
 def main():
+    """Run one locked maintenance command and emit JSON with a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data-root')
     sub = parser.add_subparsers(dest='command', required=True)
@@ -197,10 +238,11 @@ def main():
                     config['auto_update'] = args.auto_update == 'on'
                 write_json(app.config_file, config)
                 result = app.show()
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        # ASCII escapes keep Unicode paths valid through legacy Windows stdout pipes.
+        print(json.dumps(result, ensure_ascii=True, indent=2))
         return 0
     except Exception as exc:
-        print(json.dumps({'status': 'error', 'reason': str(exc)}, ensure_ascii=False))
+        print(json.dumps({'status': 'error', 'reason': str(exc)}, ensure_ascii=True))
         return 1
 
 

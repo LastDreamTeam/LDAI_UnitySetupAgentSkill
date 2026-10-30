@@ -8,7 +8,7 @@ Use this baseline for Windows workstations that must open, build, and collaborat
 - Current stable international Unity Hub, signed by Unity Technologies.
 - Exact international Editor version from `ProjectSettings/ProjectVersion.txt`.
 - Do not substitute a close version automatically. Unity serialization, packages, render pipelines, native plugins, and IL2CPP output can differ between patch releases.
-- Base production module: Windows Build Support (IL2CPP).
+- Base production module: Windows Build Support (IL2CPP). Its presence proves module installation, not that the native build toolchain is ready.
 - Add Android Build Support, Android SDK/NDK Tools, and OpenJDK when Android output is required.
 - Add Web, Linux, server, documentation, or language modules only when the project or user needs them.
 - Simplified Chinese UI and the `language-zh-hans` module are compatible with an international Editor and are not China-build evidence.
@@ -22,6 +22,8 @@ Preferred normal profile:
 - Required Unity integration component: `Microsoft.VisualStudio.Component.Unity`.
 - Include recommended HLSL tooling when shader work is expected.
 - Let a repository `.vsconfig` add required workloads, but inspect it before installation.
+
+For Windows IL2CPP output, separately verify compatible MSVC C++ build tools and a Windows SDK against the exact Editor and target architecture. The `ManagedGame` workload and `Component.Unity` provide Unity/C# integration; their presence does not prove that the C++ compiler or Windows SDK is installed. Inspect the actual toolchain and perform a representative build before reporting build readiness. For example, the [Unity 6.0 Windows requirements](https://docs.unity.com/en-us/engine/6000.0/manual/platform-specific/windows/requirements-and-compatibility) specify C++ Tools and a minimum Windows SDK; do not apply that version's requirements blindly to older Editors. Use the matching [Microsoft workload/component directory](https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-community?view=visualstudio) to select required components rather than installing all optional workloads.
 
 Compatibility profile:
 

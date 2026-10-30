@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 — 2026-10-30
+
+- Use curl's final HTTP status instead of matching response-header text; keep malformed redirects scoped to their route and redact URL/port parsing failures.
+- Reject linked source/destination ancestors before quarantine, while retaining preview, target selection, protected token/project state and recovery manifests.
+- Refuse skill updates whose state directory is inside the snapshot source; pin the fetched commit and recheck branch/HEAD/worktree before merging.
+- Preserve Unicode paths and URLs in machine-readable maintenance and route output through legacy console encodings.
+- Clarify standalone Editor destinations to avoid overwriting another installed version, and verify MSVC/Windows SDK separately from the Windows IL2CPP module.
+- Add isolated regressions and parse Windows helpers with both Windows PowerShell and available PowerShell 7. No real Unity installation, uninstallation or system-network changes are part of this validation.
+
 ## 0.2.0 — 2026-10-09
 
 - Integrate NoUnityCN as a third-party discovery layer with upstream-published alternate sites, official Releases API cross-checking, Hub deep links, direct installers and verified offline transfer.

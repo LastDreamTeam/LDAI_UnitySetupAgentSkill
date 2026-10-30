@@ -2,7 +2,7 @@
 name: ld-unitysetup-online
 description: Install and verify international Unity workstations, remove Tuanjie or Unity China products with authorization, and repair Unity website/CDN region redirects through scoped existing proxy routes. Use for Unity Hub/Editor setup, cN/tN builds, installer provenance, China-state cleanup, or exact-version workstation readiness; not Unity project code changes.
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
 ---
 
 # LD Unity Setup Online

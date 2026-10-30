@@ -1,8 +1,10 @@
 import importlib.util
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -112,6 +114,72 @@ class MaintenanceTests(unittest.TestCase):
         self.assertIn('last_attempt', state)
         self.assertNotIn('last_success', state)
         self.assertEqual('official_version_check_failed', state['last_error'])
+
+    def test_nested_state_is_refused_before_snapshot(self):
+        """Keep an ignored local state directory out of its own update archive."""
+        remote = self.release()
+        skill = self.clone / 'skills' / maintain.NAME
+        app = maintain.Maintainer(skill, skill / 'state.local')
+        original = self.git(self.clone, 'rev-parse', 'HEAD')
+        # Opening the archive here could recursively copy the file being written.
+        with patch.object(maintain, 'remote_manifest', return_value=remote), \
+                patch.object(maintain.zipfile, 'ZipFile', side_effect=AssertionError('snapshot opened')):
+            with self.assertRaisesRegex(RuntimeError, 'State directory'):
+                app.sync(idle=True, approve=True, force=True)
+        self.assertEqual(original, self.git(self.clone, 'rev-parse', 'HEAD'))
+
+    def test_branch_switch_during_fetch_is_preserved(self):
+        """Never merge an approved main update into a concurrently selected branch."""
+        remote = self.release()
+        original_git = self.app.git
+        original = self.git(self.clone, 'rev-parse', 'HEAD')
+
+        def switch_after_fetch(*args, **kwargs):
+            """Simulate another terminal switching branches while fetch finishes."""
+            result = original_git(*args, **kwargs)
+            if args[0] == 'fetch':
+                self.git(self.clone, 'switch', '-c', 'user-work')
+            return result
+
+        # A clean worktree does not prove that the previously approved branch is active.
+        with patch.object(maintain, 'remote_manifest', return_value=remote), \
+                patch.object(self.app, 'git', side_effect=switch_after_fetch):
+            with self.assertRaisesRegex(RuntimeError, 'Branch or HEAD changed'):
+                self.app.sync(idle=True, approve=True, force=True)
+        self.assertEqual('user-work', self.git(self.clone, 'branch', '--show-current'))
+        self.assertEqual(original, self.git(self.clone, 'rev-parse', 'HEAD'))
+
+    def test_linked_state_is_refused_before_snapshot(self):
+        """Do not follow an ignored skill directory link back to external snapshot state."""
+        remote = self.release()
+        link = self.clone / 'skills' / maintain.NAME / 'state.local'
+        if os.name == 'nt':
+            # Junctions work without symlink privileges and exercise the Windows distinction.
+            quoted_link = str(link).replace("'", "''")
+            quoted_target = str(self.app.data).replace("'", "''")
+            command = f"New-Item -ItemType Junction -Path '{quoted_link}' -Target '{quoted_target}' | Out-Null"
+            subprocess.run(['powershell', '-NoProfile', '-Command', command], check=True,
+                           capture_output=True, text=True)
+        else:
+            link.symlink_to(self.app.data, target_is_directory=True)
+        original = self.git(self.clone, 'rev-parse', 'HEAD')
+        with patch.object(maintain, 'remote_manifest', return_value=remote), \
+                patch.object(maintain.zipfile, 'ZipFile', side_effect=AssertionError('snapshot opened')):
+            with self.assertRaisesRegex(RuntimeError, 'Linked directory'):
+                self.app.sync(idle=True, approve=True, force=True)
+        self.assertEqual(original, self.git(self.clone, 'rev-parse', 'HEAD'))
+        self.assertFalse((self.app.data / 'backups').exists())
+
+    def test_cli_json_survives_ascii_output_with_unicode_paths(self):
+        """Allow machine-readable CLI output through legacy Windows code pages."""
+        data_root = self.root / '\u6d4b\u8bd5-state'
+        # JSON escapes preserve the original path when the consumer decodes stdout.
+        env = {**os.environ, 'PYTHONIOENCODING': 'ascii'}
+        result = subprocess.run([sys.executable, '-B', str(SCRIPT), '--data-root',
+                                 str(data_root), 'show'], capture_output=True, env=env)
+        self.assertEqual(0, result.returncode, result.stderr.decode('ascii', errors='replace'))
+        output = json.loads(result.stdout.decode('ascii'))
+        self.assertIn('\u6d4b\u8bd5-state', output['data_dir'])
 
 
 if __name__ == '__main__':

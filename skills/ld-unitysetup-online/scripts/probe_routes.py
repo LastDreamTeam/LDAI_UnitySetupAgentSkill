@@ -35,7 +35,13 @@ def public_url(url: str) -> str:
 
 
 def validate_url(url: str, allow_loopback: bool = False) -> None:
-    p = urlsplit(url)
+    """Reject unsafe request URLs without echoing malformed or credential-bearing input."""
+    try:
+        p = urlsplit(url)
+        # Accessing the port performs validation; urllib errors may contain raw input.
+        p.port
+    except ValueError:
+        raise ValueError('URL must have a valid host and port') from None
     if not p.hostname or p.username is not None or p.password is not None:
         raise ValueError('URL must have a host and no embedded credentials')
     if p.scheme == 'https':
@@ -50,6 +56,7 @@ def validate_url(url: str, allow_loopback: bool = False) -> None:
 
 def trace(url: str, *, proxy: str | None = None, timeout: int = 15,
           max_hops: int = 8, allow_loopback: bool = False) -> dict:
+    """Return a redacted, hop-by-hop route verdict without cookies or TLS bypass."""
     validate_url(url, allow_loopback)
     curl = shutil.which('curl.exe') or shutil.which('curl')
     result = {'verdict': 'UNKNOWN', 'url': public_url(url), 'hops': [],
@@ -58,8 +65,13 @@ def trace(url: str, *, proxy: str | None = None, timeout: int = 15,
         result['reason'] = 'curl_not_found'
         return result
     if proxy:
-        p = urlsplit(proxy)
-        if p.scheme not in ('http', 'https', 'socks5', 'socks5h') or not p.hostname or p.username or p.password:
+        try:
+            p = urlsplit(proxy)
+            p.port
+        except ValueError:
+            raise ValueError('Proxy URL must have a valid host and port') from None
+        if (p.scheme not in ('http', 'https', 'socks5', 'socks5h') or not p.hostname
+                or p.username is not None or p.password is not None):
             raise ValueError('Use an existing proxy URL without embedded credentials')
     visited = set()
     current = url
@@ -87,7 +99,8 @@ def trace(url: str, *, proxy: str | None = None, timeout: int = 15,
         except (OSError, subprocess.TimeoutExpired):
             result.update(reason='request_did_not_complete')
             return result
-        marker = re.search(r'LD_STATUS:(\d+)', call.stdout)
+        # Only curl's final write-out is authoritative; headers can contain this text.
+        marker = re.search(r'\nLD_STATUS:(\d{3})\s*\Z', call.stdout)
         code = int(marker.group(1)) if marker else 0
         locations = re.findall(r'^location:\s*(.+?)\s*$', call.stdout, re.I | re.M)
         hop = {'url': public_url(current), 'status': code, 'method': 'HEAD' if binary else 'GET'}
@@ -99,9 +112,19 @@ def trace(url: str, *, proxy: str | None = None, timeout: int = 15,
             if not locations:
                 result.update(verdict='WARN', reason='redirect_without_location')
                 return result
-            current = urljoin(current, locations[-1])
-            hop['location'] = public_url(current)
-            if china_host(urlsplit(current).hostname):
+            try:
+                current = urljoin(current, locations[-1])
+                target_is_china = china_host(urlsplit(current).hostname)
+                safe_location = public_url(current)
+                # Classify China hops before requesting them; validate all other targets
+                # even at the hop limit, without surfacing raw parser exception details.
+                if not target_is_china:
+                    validate_url(current, allow_loopback)
+            except ValueError:
+                result.update(verdict='WARN', reason='invalid_redirect_url')
+                return result
+            hop['location'] = safe_location
+            if target_is_china:
                 result.update(verdict='FAIL', reason='china_or_tuanjie_hop')
                 return result
             continue
@@ -114,6 +137,7 @@ def trace(url: str, *, proxy: str | None = None, timeout: int = 15,
 
 
 def main() -> int:
+    """Print route reports and return 0 for PASS, 1 for WARN, or 2 for FAIL."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--url', action='append', help='Repeat for each endpoint; defaults to archive/download/Hub binary')
     parser.add_argument('--proxy', help='Existing effective proxy; no embedded credentials')
@@ -130,7 +154,8 @@ def main() -> int:
     verdict = 'FAIL' if any(r['verdict'] == 'FAIL' for r in reports) else 'WARN' if any(r['verdict'] != 'PASS' for r in reports) else 'PASS'
     output = {'verdict': verdict, 'readOnly': True, 'routes': reports}
     if args.json:
-        print(json.dumps(output, ensure_ascii=False, indent=2))
+        # ASCII escapes preserve Unicode values while supporting legacy stdout encodings.
+        print(json.dumps(output, ensure_ascii=True, indent=2))
     else:
         for r in reports:
             print(r['verdict'], r['url'], r.get('reason', ''))

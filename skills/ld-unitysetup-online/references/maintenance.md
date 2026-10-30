@@ -14,7 +14,11 @@ python -B scripts/maintain.py sync --idle --approve-update
 
 Defaults are interval_days=7 and auto_update=false. A one-time `--approve-update` does not enable future automatic updates. Only a human request authorizes `config --auto-update on`. `--force` only changes timing, not content/approval protection. State is isolated by the real installed skill path, outside tracked content; invalid config and concurrent locks fail rather than silently reset. A failed network request is recorded as failure, not a successful check.
 
-Git updates require exact official HTTPS origin, main, clean tracked/untracked state and fast-forward ancestry. Snapshot the current skill before merge; preserve preferences and refuse ignored-file collisions. Read the new skill after a successful update; work already in progress remains on its loaded rules.
+Git updates require exact official HTTPS origin, main, clean tracked/untracked state and fast-forward ancestry. The state/backup directory must resolve outside the skill, including when `--data-root` is supplied; this prevents a snapshot from copying its own growing archive. The fetched commit is pinned, and branch, HEAD and worktree are checked again before merge. If another terminal changes the checkout, stop and preserve that work. Snapshot the current skill before merge; preserve preferences and refuse ignored-file collisions. Read the new skill after a successful update; work already in progress remains on its loaded rules.
+
+CLI output is JSON with ASCII escapes so Unicode paths survive legacy console encodings. Parse the JSON before displaying paths; escaping does not change their decoded values.
+
+Directory links inside the skill also stop snapshot creation, including ignored junctions pointing back to external state. Review those paths before updating; do not delete or retarget them automatically. The host's link to the skill root remains supported because that root is resolved before maintenance.
 
 No cron, Windows tasks, services or permanent helper processes are installed. Use-time checks require the Agent to call the tool; do not promise background updates while the Agent is not running.
 
