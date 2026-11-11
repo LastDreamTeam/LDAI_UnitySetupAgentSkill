@@ -1,5 +1,8 @@
 # LDAI_UnitySetupAgentSkill
 
+> **自用项目** · 本仓库主要供维护者自用。
+
+
 **`ld-unitysetup-online`：安装和维护国际版 Unity，清理中国版 / 团结，排查地区重定向问题。**
 
 由 `ld-unitysetup-v1` 改造而来。
