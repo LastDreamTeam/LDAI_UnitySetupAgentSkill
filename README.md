@@ -1,11 +1,16 @@
 # LDAI_UnitySetupAgentSkill
 
-> **自用项目** · 本仓库主要供维护者自用。
+维护 Unity 工作站时，先看工程需要哪个 Editor，再检查这台机器上的 Hub、Editor 和下载来源。LastDream 的 `ld-unitysetup-online` 可用于安装国际版 Unity，或单独排查误装的团结编辑器。技能由 `ld-unitysetup-v1` 迁移而来。
 
+## 先看看工作站缺什么
 
-**`ld-unitysetup-online`：安装和维护国际版 Unity，清理中国版 / 团结，排查地区重定向问题。**
+在工程的 `ProjectSettings/ProjectVersion.txt` 中查看 `m_EditorVersion`。从本仓根目录打开 PowerShell，把最后的路径换成自己的工程，先做一次离线盘点。
 
-由 `ld-unitysetup-v1` 改造而来。
+```powershell
+./skills/ld-unitysetup-online/scripts/Test-LDUnitySetup.ps1 -SkipNetwork -ProjectPath './MyGame'
+```
+
+对照报告中的 Editor 版本和工程需求。脚本退出码 0 表示通过，1 表示有警告或未确认项，2 表示有检查失败。默认表格的 `Evidence` 会列出依据。需要逐项建议时，在同一命令末尾加上 `-OutputFormat Json`，查看 `Recommendation` 字段。下载跳转等联网问题可从[技能入口](skills/ld-unitysetup-online/SKILL.md)单独排查。
 
 ## 一句话交给任意支持技能的 Agent
 
@@ -46,6 +51,10 @@ python -B scripts/maintain.py config --interval-days 7 --auto-update off
 ```
 
 以上命令在完整技能目录运行。只有用户要求长期自动更新才使用 `--auto-update on`。原生管理器安装由该管理器更新；单纯文件拷贝可查版本，不能冒称 Git 更新后端可用。见[维护与迁移](skills/ld-unitysetup-online/references/maintenance.md)。
+
+## English — check a Unity workstation
+
+Use this skill to match a project to its exact international Unity Editor, inspect its Hub and review regional download redirects. On Windows, start with the offline PowerShell audit above. Follow the [installation guide](skills/install.md) to add the complete skill to your agent.
 
 ## 许可
 
